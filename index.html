@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JAPAN 日文小學堂 - 廣東話講解版</title>
+    <style>
+        :root { --main: #d63031; --sub: #fab1a0; --win: #00b894; --gold: #f1c40f; --fail: #ff7675; --nav: #dfe6e9; }
+        body { font-family: 'Comic Sans MS', 'Microsoft JhengHei', sans-serif; background: #fff5f5; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; margin: 0; padding: 40px 20px; gap: 20px; flex-wrap: wrap; }
+        
+        #login-screen { background: white; width: 400px; padding: 40px; border-radius: 40px; border: 6px solid var(--main); text-align: center; box-shadow: 0 15px 30px rgba(0,0,0,0.1); margin-top: 50px; }
+        .input-box { width: 85%; padding: 12px; margin: 10px 0; border-radius: 15px; border: 3px solid var(--sub); font-size: 20px; text-align: center; font-weight: bold; }
+
+        .game-container { display: none; gap: 20px; flex-wrap: wrap; justify-content: center; width: 100%; }
+        .card { background: white; width: 420px; padding: 25px; border-radius: 40px; box-shadow: 0 15px 30px rgba(0,0,0,0.1); text-align: center; border: 6px solid var(--main); position: relative; }
+        
+        .score-board { background: white; width: 150px; padding: 20px; border-radius: 30px; border: 4px solid var(--sub); max-height: 620px; overflow-y: auto; }
+        .score-item { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #eee; font-weight: bold; font-size: 14px; }
+        .current-row { background: #fff4f4; color: var(--main); border-radius: 8px; border: 1px solid var(--main); }
+
+        .explain-box { background: #fffaf0; padding: 15px; border-radius: 20px; margin: 10px 0; border: 2px dashed var(--main); min-height: 80px; text-align: left; }
+        #explain-text { font-size: 18px; color: #444; line-height: 1.5; font-weight: bold; }
+
+        .word-box { background: #fff; border: 4px solid var(--sub); padding: 20px; border-radius: 25px; margin: 15px 0; }
+        .jp-text { font-size: 40px; color: var(--main); font-weight: bold; display: block; min-height: 50px; }
+
+        .btn { border: none; padding: 12px; border-radius: 50px; font-size: 17px; cursor: pointer; width: 100%; margin: 6px 0; font-weight: bold; transition: 0.3s; }
+        .btn-explain { background: #f1f2f6; color: #555; border: 2px solid #ddd; }
+        .btn-jp { background: var(--sub); color: white; box-shadow: 0 4px 0 #e17055; }
+        .btn-mic { background: var(--win); color: white; box-shadow: 0 5px 0 #00897b; height: 75px; font-size: 20px; margin-top: 10px; }
+        
+        .nav-group-top { display: flex; gap: 10px; justify-content: center; margin-top: 20px; }
+        .btn-nav { background: var(--nav); color: #555; width: 48%; font-size: 14px; }
+        .btn-finish-wrap { margin-top: 15px; border-top: 1px solid #eee; padding-top: 15px; }
+        .btn-finish { background: var(--fail); color: white; box-shadow: 0 4px 0 #d63031; width: 80%; }
+        
+        .recording { background: var(--fail) !important; animation: pulse 1s infinite; }
+        #score-msg { font-size: 20px; font-weight: bold; margin: 10px 0; min-height: 50px; display: flex; align-items: center; justify-content: center; text-align: center; }
+        @keyframes pulse { 0% {transform: scale(1);} 50% {transform: scale(0.95);} 100% {transform: scale(1);} }
+    </style>
+</head>
+<body>
+
+<div id="login-screen">
+    <h1>🇯🇵 日文小學堂</h1>
+    <p style="font-weight: bold;">請輸入學生資料：</p>
+    <input type="text" id="class-input" class="input-box" placeholder="班級 (例如: 1A)">
+    <input type="number" id="no-input" class="input-box" placeholder="學號 (例如: 05)">
+    <button class="btn btn-jp" onclick="startGame()" style="font-size: 22px;">開始挑戰！</button>
+</div>
+
+<div id="game-area" class="game-container">
+    <div class="score-board">
+        <h3 style="color:var(--main); text-align:center; font-size:16px; margin-top:0;">
+            班級: <span id="display-class">--</span><br>
+            學號: <span id="display-no">--</span>
+        </h3>
+        <div id="score-list"></div>
+    </div>
+
+    <div class="card">
+        <div id="progress" style="font-weight:bold; color:var(--main); margin-bottom:10px;">關卡：1 / 20</div>
+        <div class="explain-box">
+            <div id="explain-text">請點擊第一個按鈕聽取廣東話講解。</div>
+        </div>
+        
+        <div id="main-play-area">
+            <div class="word-box">
+                <span class="jp-text" id="target-jp">こんにちは</span>
+                <div style="color:#636e72; font-size:20px; font-weight:bold;" id="target-mean">你好</div>
+            </div>
+            <button class="btn btn-explain" onclick="playExplain()">💬 1. 聽取廣東話解釋</button>
+            <button class="btn btn-jp" onclick="playJapanese()">🔊 2. 聽取標準日文示範</button>
+            <button class="btn btn-mic" id="micBtn" onclick="toggleMic()">🎙️ 3. 點擊後開始朗讀</button>
+            
+            <div id="score-msg"></div>
+            
+            <div class="nav-group-top">
+                <button class="btn btn-nav" onclick="prevLevel()">⬅️ 上一題</button>
+                <button class="btn btn-nav" onclick="skipLevel()">跳過 ➡️</button>
+            </div>
+
+            <div class="btn-finish-wrap">
+                <button class="btn btn-finish" onclick="confirmSubmit()">🚩 提交成績並結束</button>
+            </div>
+        </div>
+
+        <div id="final-area" style="display:none;">
+            <h2 style="color: var(--main);">🎊 完成挑戰！</h2>
+            <p style="font-weight: bold;">您的最終平均得分為：</p>
+            <div style="font-size: 75px; color: var(--gold); font-weight: bold;" id="total-avg">0</div>
+            <div id="save-status" style="color:var(--win); font-weight:bold;">正在上傳成績...</div>
+            <button class="btn btn-jp" style="margin-top: 30px;" onclick="location.reload()">🔄 下一位挑戰者</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 20題日文題目
+    const levels = [
+        { jp: "こんにちは", jp_read: "こんにちは", mean: "你好", explain: "這句是「你好」，白天見到人都可以講。" },
+        { jp: "ありがとう", jp_read: "ありがとう", mean: "謝謝", explain: "想多謝別人的時候就講呢句。" },
+        { jp: "すみません", jp_read: "すみません", mean: "對不起/不好意思", explain: "可以係道歉，亦可以係想叫人嗰陣用。" },
+        { jp: "おはよう", jp_read: "おはよう", mean: "早晨", explain: "朝早見到人打招呼嘅說話。" },
+        { jp: "おやすみ", jp_read: "おやすみ", mean: "晚安", explain: "準備去訓覺嗰陣同屋企人講。" },
+        { jp: "おかあさん", jp_read: "おかあさん", mean: "媽媽", explain: "日文入面叫媽媽嘅方法。" },
+        { jp: "おとうさん", jp_read: "おとうさん", mean: "爸爸", explain: "日文入面叫爸爸嘅方法。" },
+        { jp: "おいしい", jp_read: "おいしい", mean: "好食", explain: "食到好味嘅嘢可以讚一聲おいしい！" },
+        { jp: "おねがい", jp_read: "おねがい", mean: "拜託了", explain: "想請人幫手嗰陣可以加埋呢句。" },
+        { jp: "だいすき", jp_read: "だいすき", mean: "好喜歡", explain: "表達自己非常鍾意某樣嘢。" },
+        { jp: "さようなら", jp_read: "さようなら", mean: "再見", explain: "同人告別、講再見嘅正式講法。" },
+        { jp: "すし", jp_read: "すし", mean: "壽司", explain: "日本最出名嘅食物之一。" },
+        { jp: "せんせい", jp_read: "せんせい", mean: "老師", explain: "喺學校見到老師要咁樣稱呼。" },
+        { jp: "ねこ", jp_read: "ねこ", mean: "貓", explain: "可愛嘅小貓，日文叫ねこ。" },
+        { jp: "いぬ", jp_read: "いぬ", mean: "狗", explain: "人類最忠心嘅朋友，日文叫いぬ。" },
+        { jp: "みず", jp_read: "みず", mean: "水", explain: "口渴要飲水，水嘅日文係みず。" },
+        { jp: "さくら", jp_read: "さくら", mean: "櫻花", explain: "日本好出名嘅花，粉紅色好靚。" },
+        { jp: "ともだち", jp_read: "ともだち", mean: "朋友", explain: "一齊玩嘅好夥伴叫ともだち。" },
+        { jp: "がんばれ", jp_read: "がんばれ", mean: "加油", explain: "幫人打氣、叫人加油嗰陣講。" },
+        { jp: "おわり", jp_read: "おわり", mean: "結束", explain: "最後一題啦，代表遊戲結束。" }
+    ];
+
+    let cur = 0, scores = new Array(20).fill(0), studentClass = "", studentNo = "";
+    const synth = window.speechSynthesis;
+    const Recognition = window.webkitRecognition || window.SpeechRecognition;
+    let rec = null;
+    let micTimeout = null;
+
+    function initRec() {
+        if (!Recognition) return;
+        rec = new Recognition();
+        rec.lang = 'ja-JP'; // 設定為日文語音辨識
+        rec.continuous = false;
+        rec.interimResults = false;
+        
+        rec.onstart = () => {
+            clearTimeout(micTimeout);
+            document.getElementById('micBtn').classList.add('recording');
+            document.getElementById('score-msg').innerText = "🎤 聽緊你讀日文...";
+            document.getElementById('score-msg').style.color = "#666";
+            micTimeout = setTimeout(() => {
+                if(rec) { rec.stop(); document.getElementById('score-msg').innerText = "⚠️ 聽唔到聲，再試下？"; }
+            }, 6000);
+        };
+
+        rec.onend = () => {
+            document.getElementById('micBtn').classList.remove('recording');
+            clearTimeout(micTimeout);
+        };
+
+        rec.onresult = (e) => {
+            clearTimeout(micTimeout);
+            const speech = e.results[0][0].transcript;
+            const target = levels[cur].jp_read;
+            let score = 0;
+
+            if (speech === target) score = 100;
+            else if (speech.includes(target) || target.includes(speech)) score = 85;
+            else {
+                let matches = 0;
+                const sArr = speech.split(''), tArr = target.split('');
+                tArr.forEach(char => { if(sArr.includes(char)) matches++; });
+                let ratio = matches / target.length;
+                if (ratio >= 0.4) score = 75;
+                else if (ratio >= 0.1) score = 60;
+            }
+
+            if (score >= 60) {
+                document.getElementById('score-msg').innerText = score + "分！好棒！";
+                document.getElementById('score-msg').style.color = "var(--win)";
+                scores[cur] = score; 
+                document.getElementById(`val-${cur}`).innerText = score + "分";
+                setTimeout(nextLevel, 1000);
+            } else {
+                document.getElementById('score-msg').innerText = "❌ 讀音未夠準，再試下！";
+                document.getElementById('score-msg').style.color = "var(--fail)";
+            }
+        };
+    }
+
+    function toggleMic() { 
+        if(!rec) initRec();
+        try { rec.start(); } catch(e) { rec.stop(); setTimeout(() => rec.start(), 300); } 
+    }
+
+    function startGame() {
+        studentClass = document.getElementById('class-input').value.trim();
+        studentNo = document.getElementById('no-input').value.trim();
+        if(!studentClass || !studentNo) return alert("請輸入班級同埋學號！");
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('game-area').style.display = 'flex';
+        document.getElementById('display-class').innerText = studentClass;
+        document.getElementById('display-no').innerText = studentNo;
+        initRec(); initScoreBoard();
+    }
+
+    function initScoreBoard() {
+        const list = document.getElementById('score-list');
+        list.innerHTML = "";
+        levels.forEach((_, i) => list.innerHTML += `<div class="score-item" id="row-${i}"><span>#${i+1}</span><span id="val-${i}">---</span></div>`);
+        updateHighlight();
+    }
+
+    function updateHighlight() {
+        document.querySelectorAll('.score-item').forEach(el => el.classList.remove('current-row'));
+        const row = document.getElementById(`row-${cur}`);
+        if(row) row.classList.add('current-row');
+    }
+
+    // 聽取廣東話講解
+    function playExplain() {
+        synth.cancel();
+        document.getElementById('explain-text').innerText = levels[cur].explain;
+        const m = new SpeechSynthesisUtterance(levels[cur].explain); 
+        m.lang = 'zh-HK'; 
+        synth.speak(m);
+    }
+
+    // 聽取標準日文示範
+    function playJapanese() {
+        synth.cancel();
+        const m = new SpeechSynthesisUtterance(levels[cur].jp_read); 
+        m.lang = 'ja-JP'; 
+        m.rate = 0.8; 
+        synth.speak(m);
+    }
+
+    function nextLevel() { if(cur < 19) { cur++; refreshUI(); } else showFinal(); }
+    function prevLevel() { if(cur > 0) { cur--; refreshUI(); } }
+    function skipLevel() { scores[cur] = 0; document.getElementById(`val-${cur}`).innerText = "跳過"; nextLevel(); }
+
+    function refreshUI() {
+        document.getElementById('progress').innerText = `關卡：${cur+1} / 20`;
+        document.getElementById('target-jp').innerText = levels[cur].jp;
+        document.getElementById('target-mean').innerText = levels[cur].mean;
+        document.getElementById('score-msg').innerText = "";
+        document.getElementById('explain-text').innerText = "撳第一個掣聽我講解啦！";
+        updateHighlight();
+    }
+
+    function confirmSubmit() {
+        if(confirm("確定要提交成績並結束？未做嘅題目會計 0 分。")) {
+            showFinal();
+        }
+    }
+
+    function showFinal() {
+        document.getElementById('main-play-area').style.display = 'none';
+        document.getElementById('final-area').style.display = 'block';
+        const avg = Math.round(scores.reduce((a,b)=>a+b, 0) / 20);
+        document.getElementById('total-avg').innerText = avg;
+        submitToGoogleForm(studentClass, studentNo, avg);
+    }
+
+    function submitToGoogleForm(cls, no, score) {
+        const studentInfo = `${cls}_(${no})`;
+        const formID = "1FAIpQLSfIZTWfuVLAvfv_gStM6WdH1MUXLNhoNZPduS_v5cEwaD1SaA"; 
+        const form = document.createElement("form");
+        form.method = "POST"; form.action = `https://docs.google.com/forms/d/e/${formID}/formResponse`;
+        form.target = "hidden_iframe";
+        const in1 = document.createElement("input"); in1.name = "entry.788411312"; in1.value = studentInfo; form.appendChild(in1);
+        const in2 = document.createElement("input"); in2.name = "entry.488980092"; in2.value = score; form.appendChild(in2);
+        const ifr = document.createElement("iframe"); ifr.name = "hidden_iframe"; ifr.style.display = "none";
+        document.body.appendChild(ifr); document.body.appendChild(form);
+        form.submit();
+        setTimeout(() => document.getElementById('save-status').innerText = "✅ 成績已成功上傳！", 1500);
+    }
+</script>
+</body>
+</html>
